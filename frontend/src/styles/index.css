@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  @font-face {
+    font-family: 'Ancizar Serif';
+    src: local('Ancizar Serif'), local('Playfair Display'), local('Cinzel'), local('Georgia');
+    font-weight: 400 800;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Typography Classes matching exact specifications */
+.nav-menu-text {
+  font-family: 'Ancizar Serif', 'Playfair Display', Georgia, serif;
+  font-weight: 700;
+  font-style: normal;
+  font-size: 18px;
+}
+
+.category-item-text {
+  font-family: 'Ancizar Serif', 'Playfair Display', Georgia, serif;
+  font-weight: 600;
+  font-style: normal;
+  font-size: 18px;
+}
+
+.content-title {
+  font-family: 'Ancizar Serif', 'Playfair Display', Georgia, serif;
+  font-weight: 600;
+  font-style: normal;
+  font-size: 48px;
+  line-height: 1.15;
+  text-align: center;
+}
+
+.content-description {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.product-name-text {
+  font-family: 'Ancizar Serif', 'Playfair Display', Georgia, serif;
+  font-weight: 600;
+  font-style: normal;
+  font-size: 18px;
+}
+
+/* Custom scrollbars for carousels */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Announcement marquee animation */
+@keyframes ticker {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-ticker {
+  display: flex;
+  width: max-content;
+  animation: ticker 25s linear infinite;
+}
+
+.animate-ticker:hover {
+  animation-play-state: paused;
+}
