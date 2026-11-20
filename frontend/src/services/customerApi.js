@@ -50,3 +50,9 @@ export const createOrder = async (orderData) => {
   if (!res.ok) throw new Error(json.message);
   return json.data;
 };
+export const getMyEnquiries = async () => {
+  const res = await fetch(`${API}/enquiries/my`, { headers: authHeaders() });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.message);
+  return json.data || [];
+};

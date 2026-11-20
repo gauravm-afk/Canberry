@@ -21,6 +21,7 @@ import CustomerRegister from './pages/customer/CustomerRegister';
 import CustomerDashboard from './pages/customer/CustomerDashboard';
 import CustomerProfile from './pages/customer/CustomerProfile';
 import CustomerOrders from './pages/customer/CustomerOrders';
+import CustomerBulkOrders from './pages/customer/CustomerBulkOrders';
 import CustomerOrderTracking from './pages/customer/CustomerOrderTracking';
 import { useCart } from './context/CartContext';
 import { fetchProducts } from './services/api';
@@ -402,6 +403,8 @@ function App() {
         <Route path="/dashboard" element={<CustomerDashboard />} />
         <Route path="/customer/profile" element={<CustomerProfile />} />
         <Route path="/customer/orders" element={<CustomerOrders />} />
+        <Route path="/customer/bulk-orders" element={<CustomerBulkOrders />} />
+        <Route path="/customer/enquiries" element={<CustomerBulkOrders />} />
         <Route path="/customer/track" element={<CustomerOrderTracking />} />
         <Route path="/customer/track/:orderId" element={<CustomerOrderTracking />} />
         <Route path="/track/:orderId" element={<CustomerOrderTracking />} />

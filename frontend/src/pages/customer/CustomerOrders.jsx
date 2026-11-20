@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingBag, Eye, MapPin, Package, ArrowRight, X } from 'lucide-react';
+import { ShoppingBag, Eye, MapPin, Package, ArrowRight, X, Boxes } from 'lucide-react';
 import CustomerLayout from '../../components/CustomerLayout';
 import { getMyOrders } from '../../services/customerApi';
 
@@ -54,6 +54,24 @@ export default function CustomerOrders() {
             className="px-4 py-2.5 bg-[#1C1C1C] hover:bg-[#684017] text-white rounded-xl text-xs sm:text-sm font-semibold transition-colors shadow-2xs self-start sm:self-auto"
           >
             Order More Treats
+          </Link>
+        </div>
+
+        {/* Navigation Tabs between Regular Orders & Bulk Orders */}
+        <div className="flex border-b border-stone-200 gap-6 text-sm font-medium">
+          <div className="pb-3 text-[#684017] border-b-2 border-[#684017] font-bold flex items-center gap-2">
+            <ShoppingBag className="w-4 h-4" />
+            <span>Regular Orders</span>
+            <span className="ml-1 text-xs px-2 py-0.5 rounded-full bg-amber-100 text-[#684017]">
+              {orders.length}
+            </span>
+          </div>
+          <Link
+            to="/customer/bulk-orders"
+            className="pb-3 text-stone-500 hover:text-stone-800 transition-colors flex items-center gap-2"
+          >
+            <Boxes className="w-4 h-4" />
+            <span>Bulk Orders</span>
           </Link>
         </div>
 

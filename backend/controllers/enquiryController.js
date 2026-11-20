@@ -78,6 +78,27 @@ export const getEnquiries = async (req, res) => {
   }
 };
 
+// Get logged-in customer's own enquiries / bulk orders
+export const getMyEnquiries = async (req, res) => {
+  try {
+    const customerId = req.customer?._id;
+    const email = req.customer?.email?.toLowerCase()?.trim();
+
+    if (!customerId && !email) {
+      return res.status(401).json({ success: false, message: 'Please log in to view your bulk orders.' });
+    }
+
+    const orConditions = [];
+    if (customerId) orConditions.push({ customerId });
+    if (email) orConditions.push({ email });
+
+    const enquiries = await Enquiry.find({ $or: orConditions }).sort({ createdAt: -1 });
+    res.json({ success: true, count: enquiries.length, data: enquiries });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message || 'Server error loading bulk orders' });
+  }
+};
+
 // PUT /api/admin/enquiries/:id/status - update enquiry status (protectAdmin)
 export const updateEnquiryStatus = async (req, res) => {
   try {

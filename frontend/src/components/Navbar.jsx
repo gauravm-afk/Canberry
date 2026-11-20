@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, ShoppingBag, User, Menu, X, ChevronDown, LayoutDashboard, LogIn, ShieldCheck, LogOut } from 'lucide-react';
+import { Search, ShoppingBag, User, Menu, X, ChevronDown, LayoutDashboard, LogIn, ShieldCheck, LogOut, Boxes } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
@@ -264,6 +264,14 @@ const Navbar = ({ onOpenSearch }) => {
                       >
                         <ShoppingBag className="w-4 h-4 flex-shrink-0 text-[#684017]" />
                         <span className="font-medium">My Orders</span>
+                      </button>
+
+                      <button
+                        onClick={() => { setAccountDropdownOpen(false); navigate('/customer/bulk-orders'); }}
+                        className="w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg text-sm font-sans text-stone-700 hover:bg-[#FFF9EF] hover:text-[#684017] transition-colors"
+                      >
+                        <Boxes className="w-4 h-4 flex-shrink-0 text-[#684017]" />
+                        <span className="font-medium">Bulk Orders</span>
                       </button>
 
                       <button

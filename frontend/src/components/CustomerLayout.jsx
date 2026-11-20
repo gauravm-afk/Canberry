@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   User,
   ShoppingBag,
+  Boxes,
   MapPin,
   LogOut,
   ChevronRight,
@@ -19,6 +20,7 @@ const navItems = [
   { label: 'My Dashboard', path: '/dashboard', icon: LayoutDashboard },
   { label: 'My Profile', path: '/customer/profile', icon: User },
   { label: 'My Orders', path: '/customer/orders', icon: ShoppingBag },
+  { label: 'Bulk Orders', path: '/customer/bulk-orders', icon: Boxes },
   { label: 'Order Tracking', path: '/customer/track', icon: MapPin },
 ];
 
