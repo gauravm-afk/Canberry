@@ -154,3 +154,13 @@ export const fetchAdminCustomers = async () => {
   if (!res.ok) throw new Error(data.message);
   return data.data || [];
 };
+
+export const deleteAdminCustomer = async (id) => {
+  const res = await fetch(`${API}/admin/customers/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};

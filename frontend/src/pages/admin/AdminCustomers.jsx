@@ -1,12 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Search, RefreshCw, Mail, Phone, MapPin, Calendar } from 'lucide-react';
+import {
+  Users,
+  Search,
+  RefreshCw,
+  Mail,
+  Phone,
+  MapPin,
+  Calendar,
+  Eye,
+  Trash2,
+  X,
+  Check,
+  AlertCircle,
+  User,
+} from 'lucide-react';
 import AdminLayout from '../../components/AdminLayout';
-import { fetchAdminCustomers } from '../../services/adminApi';
+import { fetchAdminCustomers, deleteAdminCustomer } from '../../services/adminApi';
 
 export default function AdminCustomers() {
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
+  const [feedback, setFeedback] = useState({ type: '', message: '' });
 
   useEffect(() => {
     loadCustomers();
@@ -19,8 +36,23 @@ export default function AdminCustomers() {
       setCustomers(data || []);
     } catch (err) {
       console.warn('Failed to load customers:', err);
+      setFeedback({ type: 'error', message: 'Failed to load customers.' });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id, name) => {
+    if (!window.confirm(`Are you sure you want to delete customer "${name}"?`)) return;
+    try {
+      setDeletingId(id);
+      await deleteAdminCustomer(id);
+      setFeedback({ type: 'success', message: `Customer "${name}" deleted successfully.` });
+      loadCustomers();
+    } catch (err) {
+      setFeedback({ type: 'error', message: err.message || 'Failed to delete customer.' });
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -35,7 +67,7 @@ export default function AdminCustomers() {
   return (
     <AdminLayout currentPage="Customers">
       <div className="space-y-6 font-sans">
-        
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -48,12 +80,31 @@ export default function AdminCustomers() {
           </div>
           <button
             onClick={loadCustomers}
-            className="inline-flex items-center gap-2 px-4 py-2 border border-stone-200 bg-white hover:bg-stone-50 rounded-xl text-xs sm:text-sm font-semibold text-stone-700 transition-colors shadow-2xs self-start sm:self-auto"
+            className="inline-flex items-center gap-2 px-4 py-2 border border-stone-200 bg-white hover:bg-stone-50 rounded-xl text-xs sm:text-sm font-semibold text-stone-700 transition-colors shadow-2xs self-start sm:self-auto cursor-pointer"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             <span>Refresh Customers</span>
           </button>
         </div>
+
+        {/* Feedback message */}
+        {feedback.message && (
+          <div
+            className={`p-4 rounded-xl flex items-center justify-between text-sm ${
+              feedback.type === 'error'
+                ? 'bg-red-50 text-red-700 border border-red-200'
+                : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              {feedback.type === 'error' ? <AlertCircle className="w-4 h-4" /> : <Check className="w-4 h-4" />}
+              <span>{feedback.message}</span>
+            </div>
+            <button onClick={() => setFeedback({ type: '', message: '' })} className="text-stone-400 hover:text-stone-700">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
 
         {/* Toolbar */}
         <div className="bg-white border border-[#EFE5D7] rounded-2xl p-4 flex items-center justify-between">
@@ -82,12 +133,13 @@ export default function AdminCustomers() {
                   <th className="px-5 py-3.5">Contact Details</th>
                   <th className="px-5 py-3.5">Delivery Address</th>
                   <th className="px-5 py-3.5">Joined Date</th>
+                  <th className="px-5 py-3.5 text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100">
                 {loading ? (
                   <tr>
-                    <td colSpan={4} className="py-12 text-center text-stone-400">
+                    <td colSpan={5} className="py-12 text-center text-stone-400">
                       Loading registered customers...
                     </td>
                   </tr>
@@ -148,11 +200,32 @@ export default function AdminCustomers() {
                           </span>
                         </div>
                       </td>
+
+                      {/* Actions */}
+                      <td className="px-5 py-4 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => setSelectedCustomer(cust)}
+                            className="p-1.5 rounded-lg text-stone-500 hover:text-[#684017] hover:bg-[#684017]/10 transition-colors cursor-pointer"
+                            title="View Customer Details"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(cust._id, cust.fullName)}
+                            disabled={deletingId === cust._id}
+                            className="p-1.5 rounded-lg text-stone-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-40 cursor-pointer"
+                            title="Delete Customer"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={4} className="py-12 text-center text-stone-400">
+                    <td colSpan={5} className="py-12 text-center text-stone-400">
                       No customers found matching search.
                     </td>
                   </tr>
@@ -161,6 +234,116 @@ export default function AdminCustomers() {
             </table>
           </div>
         </div>
+
+        {/* View Customer Details Modal */}
+        {selectedCustomer && (
+          <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-hidden animate-fadeIn">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col font-sans border border-stone-200 overflow-hidden max-h-[90vh]">
+              {/* Modal Header */}
+              <div className="px-5 sm:px-6 py-4 bg-stone-50 border-b border-stone-200 flex items-center justify-between flex-shrink-0">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-[#684017]/10 text-[#684017] flex items-center justify-center">
+                    <User className="w-4 h-4" />
+                  </div>
+                  <h3 className="font-serif font-bold text-base sm:text-lg text-[#1C1C1C]">
+                    Customer Details
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setSelectedCustomer(null)}
+                  className="p-1.5 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-200/50 transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div className="p-5 sm:p-6 overflow-y-auto space-y-4">
+                {/* Customer Avatar & Name Header */}
+                <div className="flex items-center gap-4 pb-4 border-b border-stone-100">
+                  <div className="w-14 h-14 rounded-full bg-[#684017]/10 text-[#684017] flex items-center justify-center font-bold text-xl uppercase flex-shrink-0">
+                    {selectedCustomer.fullName ? selectedCustomer.fullName.charAt(0) : 'C'}
+                  </div>
+                  <div>
+                    <h4 className="font-serif font-bold text-lg text-stone-900 leading-tight">
+                      {selectedCustomer.fullName}
+                    </h4>
+                    <span className="text-xs text-stone-400 font-mono">
+                      Customer ID: #{selectedCustomer._id}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Details Cards */}
+                <div className="space-y-3 text-sm">
+                  {/* Email */}
+                  <div className="flex items-start gap-3 p-3 rounded-xl bg-stone-50 border border-stone-100">
+                    <Mail className="w-4 h-4 text-[#684017] mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-xs text-stone-400 uppercase font-semibold">Email Address</p>
+                      <p className="font-medium text-stone-800">{selectedCustomer.email || 'N/A'}</p>
+                    </div>
+                  </div>
+
+                  {/* Phone */}
+                  <div className="flex items-start gap-3 p-3 rounded-xl bg-stone-50 border border-stone-100">
+                    <Phone className="w-4 h-4 text-[#684017] mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-xs text-stone-400 uppercase font-semibold">Phone Number</p>
+                      <p className="font-medium text-stone-800">{selectedCustomer.phone || 'N/A'}</p>
+                    </div>
+                  </div>
+
+                  {/* Address */}
+                  <div className="flex items-start gap-3 p-3 rounded-xl bg-stone-50 border border-stone-100">
+                    <MapPin className="w-4 h-4 text-[#684017] mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-xs text-stone-400 uppercase font-semibold">Delivery Address</p>
+                      <p className="font-medium text-stone-800">
+                        {selectedCustomer.address ? (
+                          <>
+                            {selectedCustomer.address}
+                            {selectedCustomer.city ? `, ${selectedCustomer.city}` : ''}
+                            {selectedCustomer.pincode ? ` - ${selectedCustomer.pincode}` : ''}
+                          </>
+                        ) : (
+                          <span className="text-stone-400 italic">No address provided</span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Joined Date */}
+                  <div className="flex items-start gap-3 p-3 rounded-xl bg-stone-50 border border-stone-100">
+                    <Calendar className="w-4 h-4 text-[#684017] mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-xs text-stone-400 uppercase font-semibold">Registered On</p>
+                      <p className="font-medium text-stone-800">
+                        {new Date(selectedCustomer.createdAt).toLocaleDateString('en-IN', {
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="px-5 sm:px-6 py-3.5 bg-stone-50 border-t border-stone-200 flex justify-end">
+                <button
+                  onClick={() => setSelectedCustomer(null)}
+                  className="px-5 py-2 bg-[#1C1C1C] hover:bg-[#684017] text-white rounded-xl text-xs sm:text-sm font-semibold transition-colors cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
       </div>
     </AdminLayout>
