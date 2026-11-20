@@ -48,7 +48,7 @@ export default function AdminLogin() {
               <span className="text-white font-bold text-2xl font-serif">C</span>
             </div>
             <h1 className="text-3xl font-bold text-white font-serif leading-tight mb-2">
-              Canberry
+              Canberi
             </h1>
             <p className="text-amber-200/80 text-sm font-medium tracking-wide uppercase mb-6">
               Admin Portal

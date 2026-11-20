@@ -58,7 +58,11 @@ const ProductSection = ({ id, title, description, products = [] }) => {
         >
           {products.length > 0 ? (
             products.map((product) => (
-              <ProductCard key={product._id || product.id} product={product} />
+              <ProductCard
+                key={product._id || product.id}
+                product={product}
+                className="w-[180px] sm:w-[262px]"
+              />
             ))
           ) : (
             <div className="py-12 text-center w-full text-stone-400 font-sans">

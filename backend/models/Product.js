@@ -10,14 +10,7 @@ const productSchema = new mongoose.Schema(
     category: {
       type: String,
       required: true,
-      enum: [
-        'Dairy Essentials',
-        'Traditional Sweets',
-        'Ready Mixes',
-        'Pastry Favorites',
-        'Ice Cream & Desserts',
-        'Refreshing Beverages',
-      ],
+      trim: true,
     },
     categorySlug: {
       type: String,
@@ -39,6 +32,10 @@ const productSchema = new mongoose.Schema(
     unit: {
       type: String,
       default: '100 g',
+    },
+    sizes: {
+      type: [String],
+      default: [],
     },
     image: {
       type: String,

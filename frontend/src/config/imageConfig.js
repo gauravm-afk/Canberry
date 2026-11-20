@@ -33,9 +33,9 @@ export const imageConfig = {
 
 
     src: logoImg,
-    alt: "Canberry Dairy, Agri & Education",
-    title: "Canberry Logo",
-    badgeLabel: "CANBERRY",
+    alt: "Canberi Dairy, Agri & Education",
+    title: "Canberi Logo",
+    badgeLabel: "CANBERI",
   },
 
   // 1. Hero Image Slider (4 Full-Width Promotional Banners)

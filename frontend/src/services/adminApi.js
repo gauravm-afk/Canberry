@@ -23,6 +23,45 @@ export const fetchDashboardStats = async () => {
   return data;
 };
 
+export const fetchCategories = async () => {
+  const res = await fetch(`${API}/categories`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data.data || [];
+};
+
+export const createCategory = async (categoryData) => {
+  const res = await fetch(`${API}/categories`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(categoryData),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
+
+export const updateCategory = async (id, categoryData) => {
+  const res = await fetch(`${API}/categories/${id}`, {
+    method: 'PUT',
+    headers: authHeaders(),
+    body: JSON.stringify(categoryData),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
+
+export const deleteCategory = async (id) => {
+  const res = await fetch(`${API}/categories/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
+
 export const fetchAdminProducts = async () => {
   const res = await fetch(`${API}/products`, { headers: authHeaders() });
   const data = await res.json();

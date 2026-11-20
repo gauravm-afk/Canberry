@@ -173,7 +173,7 @@ const Footer = () => {
 
         {/* Bottom Bar: Copyright note */}
         <div className="pt-8 border-t border-stone-200/60 flex flex-col sm:flex-row items-center justify-between text-xs text-stone-400 font-sans">
-          <p>© {new Date().getFullYear()} Canberry Dairy Farm. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Canberi Dairy Farm. All rights reserved.</p>
           <p className="mt-2 sm:mt-0">Farm-fresh daily perfection, from our pastures to your family.</p>
         </div>
 

@@ -85,7 +85,7 @@ export default function AdminLayout({ children, currentPage }) {
                 C
               </div>
               <div>
-                <p className="text-sm font-bold text-[#1C1C1C] font-serif leading-tight">Canberry</p>
+                <p className="text-sm font-bold text-[#1C1C1C] font-serif leading-tight">Canberi</p>
                 <p className="text-xs text-stone-400 leading-tight">Admin Panel</p>
               </div>
             </Link>

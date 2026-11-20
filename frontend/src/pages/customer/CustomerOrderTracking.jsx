@@ -16,7 +16,7 @@ import { getOrderById, getMyOrders } from '../../services/customerApi';
 
 const TRACKING_STEPS = [
   { key: 'Pending', label: 'Order Placed', desc: 'We have received your order' },
-  { key: 'Confirmed', label: 'Confirmed', desc: 'Order verified by Canberry dairy kitchen' },
+  { key: 'Confirmed', label: 'Confirmed', desc: 'Order verified by Canberi dairy kitchen' },
   { key: 'Processing', label: 'Processing', desc: 'Fresh churned & packed in chilled condition' },
   { key: 'Shipped', label: 'Shipped', desc: 'Handed over to refrigerated cold-chain courier' },
   { key: 'Out for Delivery', label: 'Out for Delivery', desc: 'Delivery partner is arriving today' },
@@ -180,7 +180,7 @@ export default function CustomerOrderTracking() {
                     This order has been cancelled
                   </h4>
                   <p className="text-xs text-red-600 mt-1 max-w-sm mx-auto">
-                    If this was unexpected, please contact Canberry Customer Support for immediate assistance.
+                    If this was unexpected, please contact Canberi Customer Support for immediate assistance.
                   </p>
                 </div>
               ) : (

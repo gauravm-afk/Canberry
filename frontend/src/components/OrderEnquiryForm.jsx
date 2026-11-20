@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, MapPin, Phone, Plus, Trash2, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
-import { submitEnquiry } from '../services/api';
+import { submitEnquiry, fetchCategories } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
-const CATEGORIES = [
+const DEFAULT_CATEGORIES = [
   'Dairy Essentials',
   'Traditional Sweets',
   'Ready Mixes',
@@ -16,6 +16,7 @@ const CATEGORIES = [
 const OrderEnquiryForm = () => {
   const navigate = useNavigate();
   const { customer } = useAuth();
+  const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
   const [formData, setFormData] = useState({
     name: '',
     phoneNumber: '',
@@ -52,6 +53,11 @@ const OrderEnquiryForm = () => {
     } catch (e) {
       console.warn('Could not restore enquiry:', e);
     }
+
+    // Load available categories dynamically
+    fetchCategories().then((cats) => {
+      if (cats && cats.length > 0) setCategories(cats);
+    });
 
     // 2. Smoothly scroll to enquiry section if returning with hash
     if (window.location.hash === '#enquiry-section') {
@@ -267,7 +273,7 @@ const OrderEnquiryForm = () => {
                           required
                         >
                           <option value="" disabled>Select Category</option>
-                          {CATEGORIES.map((cat) => (
+                          {categories.map((cat) => (
                             <option key={cat} value={cat}>
                               {cat}
                             </option>

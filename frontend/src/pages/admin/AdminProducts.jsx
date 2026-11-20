@@ -10,6 +10,7 @@ import {
   AlertCircle,
   Eye,
   RefreshCw,
+  Layers,
 } from 'lucide-react';
 import AdminLayout from '../../components/AdminLayout';
 import {
@@ -17,9 +18,11 @@ import {
   createAdminProduct,
   updateAdminProduct,
   deleteAdminProduct,
+  fetchCategories,
 } from '../../services/adminApi';
+import ManageCategoriesModal from '../../components/ManageCategoriesModal';
 
-const CATEGORIES = [
+const DEFAULT_CATEGORIES = [
   'Dairy Essentials',
   'Traditional Sweets',
   'Ready Mixes',
@@ -30,6 +33,7 @@ const CATEGORIES = [
 
 export default function AdminProducts() {
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
@@ -37,6 +41,7 @@ export default function AdminProducts() {
 
   // Modal State
   const [modalOpen, setModalOpen] = useState(false);
+  const [categoryModalOpen, setCategoryModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
@@ -57,7 +62,30 @@ export default function AdminProducts() {
 
   useEffect(() => {
     loadProducts();
+    loadCategories();
   }, []);
+
+  const loadCategories = async () => {
+    try {
+      const data = await fetchCategories();
+      if (data && data.length > 0) {
+        setCategories(data);
+      }
+    } catch (err) {
+      console.warn('Load categories error:', err);
+    }
+  };
+
+  const handleCategoryAdded = (newCatName) => {
+    setCategories((prev) => {
+      if (!prev.includes(newCatName)) {
+        return [...prev, newCatName].sort();
+      }
+      return prev;
+    });
+    setFormData((prev) => ({ ...prev, category: newCatName }));
+    setFeedback({ type: 'success', message: `Category "${newCatName}" created and selected!` });
+  };
 
   const loadProducts = async () => {
     try {
@@ -133,6 +161,7 @@ export default function AdminProducts() {
         ...formData,
         price: Number(formData.price),
         originalPrice: formData.originalPrice ? Number(formData.originalPrice) : null,
+        sizes: formData.unit && formData.unit.trim() ? [formData.unit.trim()] : ['100 g'],
       };
 
       if (editingProduct) {
@@ -176,13 +205,22 @@ export default function AdminProducts() {
               Add, update, or remove dairy products displayed across the store.
             </p>
           </div>
-          <button
-            onClick={handleOpenAdd}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#684017] hover:bg-[#523211] text-white rounded-xl text-xs sm:text-sm font-semibold transition-colors shadow-sm self-start sm:self-auto font-sans"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Add New Product</span>
-          </button>
+          <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto font-sans">
+            <button
+              onClick={() => setCategoryModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white border border-stone-300 hover:border-[#684017] hover:text-[#684017] text-stone-700 rounded-xl text-xs sm:text-sm font-semibold transition-colors shadow-2xs cursor-pointer"
+            >
+              <Layers className="w-4 h-4 text-[#684017]" />
+              <span>Manage Categories</span>
+            </button>
+            <button
+              onClick={handleOpenAdd}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#684017] hover:bg-[#523211] text-white rounded-xl text-xs sm:text-sm font-semibold transition-colors shadow-sm cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add New Product</span>
+            </button>
+          </div>
         </div>
 
         {/* Feedback message */}
@@ -226,7 +264,7 @@ export default function AdminProducts() {
               className="px-3 py-2 border border-stone-200 rounded-xl text-xs sm:text-sm bg-white text-stone-700 focus:outline-none focus:border-[#684017]"
             >
               <option value="All">All Categories</option>
-              {CATEGORIES.map((cat) => (
+              {categories.map((cat) => (
                 <option key={cat} value={cat}>{cat}</option>
               ))}
             </select>
@@ -425,15 +463,24 @@ export default function AdminProducts() {
                 {/* Category & Unit */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-stone-700 uppercase tracking-wider mb-1">
-                      Category *
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-xs font-semibold text-stone-700 uppercase tracking-wider">
+                        Category *
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setCategoryModalOpen(true)}
+                        className="text-xs font-semibold text-[#684017] hover:underline cursor-pointer"
+                      >
+                        + Manage Categories
+                      </button>
+                    </div>
                     <select
                       value={formData.category}
                       onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                       className="w-full px-3.5 py-2.5 border border-stone-300 rounded-xl text-sm focus:outline-none focus:border-[#684017] bg-white"
                     >
-                      {CATEGORIES.map((c) => (
+                      {categories.map((c) => (
                         <option key={c} value={c}>{c}</option>
                       ))}
                     </select>
@@ -621,6 +668,13 @@ export default function AdminProducts() {
             </div>
           </div>
         )}
+
+        {/* Manage Categories Modal */}
+        <ManageCategoriesModal
+          isOpen={categoryModalOpen}
+          onClose={() => setCategoryModalOpen(false)}
+          onCategoriesChanged={loadCategories}
+        />
 
       </div>
     </AdminLayout>

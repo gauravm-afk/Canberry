@@ -9,6 +9,7 @@ import enquiryRoutes from './routes/enquiryRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
+import categoryRoutes from './routes/categoryRoutes.js';
 import { Product } from './models/Product.js';
 import { initialProducts } from './seeds/seedData.js';
 
@@ -59,19 +60,20 @@ app.use('/api/enquiries', enquiryRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/categories', categoryRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    service: 'Canberry Dairy E-Commerce API',
+    service: 'Canberi Dairy E-Commerce API',
   });
 });
 
 // Root API response
 app.get('/', (req, res) => {
-  res.send('Canberry Dairy API is running.');
+  res.send('Canberi Dairy API is running.');
 });
 
 // Global error handler

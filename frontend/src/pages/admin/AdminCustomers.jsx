@@ -43,7 +43,7 @@ export default function AdminCustomers() {
               Registered Customers
             </h2>
             <p className="text-xs sm:text-sm text-stone-500">
-              Directory of verified customers registered with Canberry Dairy.
+              Directory of verified customers registered with Canberi Dairy.
             </p>
           </div>
           <button

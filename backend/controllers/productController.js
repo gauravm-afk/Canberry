@@ -121,7 +121,7 @@ export const createProduct = async (req, res) => {
       isTraditionalSweet: !!isTraditionalSweet,
       isIceCream: !!isIceCream,
       inStock: inStock !== undefined ? !!inStock : true,
-      sizes: Array.isArray(sizes) ? sizes : ['100gm', '200gm'],
+      sizes: Array.isArray(sizes) && sizes.length > 0 ? sizes : [unit?.trim() || '100 g'],
     });
 
     res.status(201).json({ success: true, message: 'Product created successfully.', data: product });

@@ -29,7 +29,7 @@ const CartPage = ({ allProducts = [] }) => {
     const code = couponCode.trim().toUpperCase();
     if (!code) return;
 
-    if (code === 'SWEET10' || code === 'CANBERRY10' || code === 'SAVE10') {
+    if (code === 'SWEET10' || code === 'CANBERI10' || code === 'CANBERRY10' || code === 'SAVE10') {
       setDiscountPercent(10);
       setCouponSuccess('10% discount applied successfully!');
     } else if (code === 'WELCOME20' || code === 'DAIRY20') {

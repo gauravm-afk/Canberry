@@ -73,7 +73,7 @@ const Navbar = ({ onOpenSearch }) => {
               href="/" 
               onClick={handleHomeClick}
               className="flex items-center group py-1"
-              aria-label="Canberry Home"
+              aria-label="Canberi Home"
             >
               <img
                 src={imageConfig.logo.src}

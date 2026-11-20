@@ -71,7 +71,7 @@ const CustomerLogin = () => {
         {/* Card */}
         <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md border border-stone-100">
           <h1 className="font-serif font-bold text-2xl text-[#1C1C1C] mb-1">Welcome Back</h1>
-          <p className="font-sans text-sm text-stone-500 mb-6">Sign in to your Canberry account</p>
+          <p className="font-sans text-sm text-stone-500 mb-6">Sign in to your Canberi account</p>
 
           {/* Notice for required login actions */}
           {infoNotice && (

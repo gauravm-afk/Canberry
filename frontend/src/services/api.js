@@ -1,5 +1,17 @@
 const API_BASE = '/api';
 
+export const fetchCategories = async () => {
+  try {
+    const res = await fetch(`${API_BASE}/categories`);
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const data = await res.json();
+    return data.data || [];
+  } catch (error) {
+    console.warn('[API] Could not fetch categories from backend:', error.message);
+    return [];
+  }
+};
+
 export const fetchProducts = async (params = {}) => {
   try {
     const query = new URLSearchParams(params).toString();

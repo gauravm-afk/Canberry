@@ -9,8 +9,11 @@ import {
   MessageSquare,
   ArrowRight,
   TrendingUp,
+  Plus,
+  Layers,
 } from 'lucide-react';
 import AdminLayout from '../../components/AdminLayout';
+import ManageCategoriesModal from '../../components/ManageCategoriesModal';
 import { fetchDashboardStats } from '../../services/adminApi';
 
 const statusBadgeStyles = {
@@ -35,6 +38,7 @@ export default function AdminDashboard() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
 
   useEffect(() => {
     loadStats();
@@ -75,18 +79,26 @@ export default function AdminDashboard() {
               Store Management
             </span>
             <h2 className="text-2xl sm:text-3xl font-serif font-bold text-white leading-tight">
-              Welcome to Canberry Admin
+              Welcome to Canberi Admin
             </h2>
             <p className="text-white/80 text-sm mt-1 max-w-xl">
               Monitor live sales, update product inventory, track customer orders, and manage bulk enquiries in real-time.
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => setIsCategoryModalOpen(true)}
+              className="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white border border-white/30 rounded-xl font-medium text-xs sm:text-sm transition-colors shadow-sm font-sans flex items-center gap-1.5 cursor-pointer"
+            >
+              <Layers className="w-4 h-4 text-amber-200" />
+              <span>Manage Categories</span>
+            </button>
             <Link
               to="/admin/products"
-              className="px-4 py-2.5 bg-white text-[#684017] rounded-xl font-medium text-xs sm:text-sm hover:bg-amber-50 transition-colors shadow-sm font-sans"
+              className="px-4 py-2.5 bg-white text-[#684017] rounded-xl font-medium text-xs sm:text-sm hover:bg-amber-50 transition-colors shadow-sm font-sans flex items-center gap-1.5"
             >
-              + Add Product
+              <Plus className="w-4 h-4 text-[#684017]" />
+              <span>+ Add Product</span>
             </Link>
           </div>
         </div>
@@ -211,6 +223,12 @@ export default function AdminDashboard() {
         </div>
 
       </div>
+
+      {/* Manage Categories Modal */}
+      <ManageCategoriesModal
+        isOpen={isCategoryModalOpen}
+        onClose={() => setIsCategoryModalOpen(false)}
+      />
     </AdminLayout>
   );
 }

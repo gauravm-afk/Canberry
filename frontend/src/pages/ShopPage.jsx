@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { SlidersHorizontal, Grid3X3, LayoutGrid, List, ChevronDown, Check } from 'lucide-react';
 import AnnouncementBar from '../components/AnnouncementBar';
 import Navbar from '../components/Navbar';
@@ -7,14 +7,15 @@ import Footer from '../components/Footer';
 import ProductCard from '../components/ProductCard';
 import CartDrawer from '../components/CartDrawer';
 import QuickSearchModal from '../components/QuickSearchModal';
+import { fetchCategories, fetchProducts } from '../services/api';
 
-const categoryOptions = [
+const BASE_CATEGORY_OPTIONS = [
   { id: 'all', label: 'All' },
-  { id: 'ice-cream', label: "Ice Cream's", match: ['Ice Cream', 'Dessert', 'Gelato', 'Cone', 'Scoop'] },
-  { id: 'dairy-essentials', label: 'Dairy Essentials', match: ['Dairy', 'Milk', 'Paneer', 'Ghee', 'Butter'] },
-  { id: 'traditional-sweets', label: "Traditional Sweet's", match: ['Sweet', 'Peda', 'Shrikhand', 'Gulab', 'Kulfi'] },
-  { id: 'pantry-favourites', label: 'Pantry Favourites', match: ['Pantry', 'Premix', 'Mix', 'Ready'] },
-  { id: 'refreshing-beverages', label: 'Refreshing Beverages', match: ['Beverage', 'Shake', 'Lassi', 'Chaas'] },
+  { id: 'ice-cream', label: "Ice Cream's", match: ['Ice Cream', 'Dessert', 'Gelato', 'Cone', 'Scoop', 'ice-cream-desserts'] },
+  { id: 'dairy-essentials', label: 'Dairy Essentials', match: ['Dairy', 'Milk', 'Paneer', 'Ghee', 'Butter', 'dairy-essentials'] },
+  { id: 'traditional-sweets', label: "Traditional Sweet's", match: ['Sweet', 'Peda', 'Shrikhand', 'Gulab', 'Kulfi', 'traditional-sweets'] },
+  { id: 'pantry-favourites', label: 'Pantry Favourites', match: ['Pantry', 'Premix', 'Mix', 'Ready', 'ready-mixes', 'pastry-favorites'] },
+  { id: 'refreshing-beverages', label: 'Refreshing Beverages', match: ['Beverage', 'Shake', 'Lassi', 'Chaas', 'refreshing-beverages'] },
   { id: 'desserts', label: "Dessert's", match: ['Dessert', 'Pastry', 'Sweet', 'Ice Cream'] },
 ];
 
@@ -25,27 +26,105 @@ const sortOptions = [
   { id: 'name-az', label: 'Name: A to Z' },
 ];
 
+const slugify = (text) =>
+  (text || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+
 const ShopPage = ({ products = [] }) => {
-  const [selectedCategory, setSelectedCategory] = useState('ice-cream');
+  const location = useLocation();
+  const [shopProducts, setShopProducts] = useState(products);
+  const [apiCategories, setApiCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedSort, setSelectedSort] = useState('featured');
   const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
   const [gridColumns, setGridColumns] = useState(3);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
+  // Read ?category= query param and pre-select on page load
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const cat = params.get('category');
+    if (cat) setSelectedCategory(cat);
+  }, [location.search]);
+
+  useEffect(() => {
+    if (products && products.length > 0) {
+      setShopProducts(products);
+    }
+  }, [products]);
+
+  useEffect(() => {
+    fetchProducts().then((data) => {
+      if (data && data.length > 0) setShopProducts(data);
+    });
+    fetchCategories().then((cats) => {
+      if (cats && cats.length > 0) setApiCategories(cats);
+    });
+  }, []);
+
+  // Dynamically compute category options including any new categories created in admin
+  const dynamicCategoryOptions = useMemo(() => {
+    const list = [...BASE_CATEGORY_OPTIONS];
+
+    // Collect all unique category names from apiCategories and current products
+    const collected = new Set();
+    apiCategories.forEach((c) => {
+      if (c && typeof c === 'string') collected.add(c.trim());
+    });
+    shopProducts.forEach((p) => {
+      if (p.category && typeof p.category === 'string') collected.add(p.category.trim());
+    });
+
+    collected.forEach((catName) => {
+      const slug = slugify(catName);
+      // Check if it's already represented in base options by EXACT id or label match only
+      const isAlreadyCovered = list.some((item) => {
+        if (item.id === slug) return true;
+        if (item.label.toLowerCase() === catName.toLowerCase()) return true;
+        return false;
+      });
+
+      if (!isAlreadyCovered) {
+        list.push({
+          id: slug,
+          label: catName,
+          match: [catName, slug],
+        });
+      }
+    });
+
+    return list;
+  }, [apiCategories, shopProducts]);
+
   // Filter products based on selected category
   const filteredProducts = useMemo(() => {
-    let result = [...products];
+    let result = [...shopProducts];
 
     if (selectedCategory !== 'all') {
-      const activeCat = categoryOptions.find((c) => c.id === selectedCategory);
-      if (activeCat && activeCat.match) {
+      const activeCat = dynamicCategoryOptions.find((c) => c.id === selectedCategory);
+      if (activeCat) {
         result = result.filter((p) => {
           const cat = (p.category || '').toLowerCase();
-          const name = (p.name || '').toLowerCase();
-          return activeCat.match.some((m) => {
-            const term = m.toLowerCase();
-            return cat.includes(term) || name.includes(term);
-          });
+          const slug = (p.categorySlug || '').toLowerCase();
+
+          // Direct exact match on category name
+          if (cat === activeCat.label.toLowerCase()) return true;
+          // Direct exact match on category slug or selected id
+          if (slug === activeCat.id || slug === selectedCategory) return true;
+          // Exact match on selected category id vs category field
+          if (cat === selectedCategory) return true;
+
+          // Keyword match — only against category and slug, NOT product name
+          if (activeCat.match && Array.isArray(activeCat.match)) {
+            return activeCat.match.some((m) => {
+              const term = m.toLowerCase();
+              return cat.includes(term) || slug.includes(term);
+            });
+          }
+
+          return false;
         });
       }
     }
@@ -60,10 +139,10 @@ const ShopPage = ({ products = [] }) => {
     }
 
     return result;
-  }, [products, selectedCategory, selectedSort]);
+  }, [shopProducts, selectedCategory, selectedSort, dynamicCategoryOptions]);
 
-  const activeCategoryObj = categoryOptions.find((c) => c.id === selectedCategory);
-  const pageTitle = activeCategoryObj ? activeCategoryObj.label : "Ice Cream's";
+  const activeCategoryObj = dynamicCategoryOptions.find((c) => c.id === selectedCategory);
+  const pageTitle = activeCategoryObj ? activeCategoryObj.label : 'All Products';
 
   return (
     <div className="min-h-screen bg-white flex flex-col antialiased">
@@ -72,7 +151,7 @@ const ShopPage = ({ products = [] }) => {
       <Navbar onOpenSearch={() => setIsSearchOpen(true)} />
 
       {/* Main Content */}
-      <main className="flex-1 max-w-[1328px] mx-auto px-4 sm:px-6 lg:px-[80px] py-8 w-full">
+      <main className="flex-1 max-w-[1328px] mx-auto px-3 sm:px-6 lg:px-[80px] py-6 sm:py-8 w-full">
         {/* Breadcrumb Navigation: Home > Shop */}
         <nav className="flex items-center space-x-2 text-xs sm:text-sm font-sans text-stone-500 mb-8 select-none">
           <Link to="/" className="hover:text-[#684017] transition-colors">
@@ -108,7 +187,7 @@ const ShopPage = ({ products = [] }) => {
 
                 {/* Categories List */}
                 <ul className="space-y-1.5 font-sans text-sm">
-                  {categoryOptions.map((cat) => {
+                  {dynamicCategoryOptions.map((cat) => {
                     const isSelected = selectedCategory === cat.id;
                     return (
                       <li key={cat.id}>
@@ -193,12 +272,12 @@ const ShopPage = ({ products = [] }) => {
             </div>
 
             {/* Product Cards Grid */}
-            <div className="pt-8">
+            <div className="pt-6 sm:pt-8">
               {filteredProducts.length > 0 ? (
                 <div
-                  className={`grid grid-cols-1 sm:grid-cols-2 ${
-                    gridColumns === 4 ? 'lg:grid-cols-4' : 'lg:grid-cols-3'
-                  } gap-6 sm:gap-8 justify-items-center`}
+                  className={`grid grid-cols-2 ${
+                    gridColumns === 4 ? 'sm:grid-cols-3 lg:grid-cols-4' : 'sm:grid-cols-2 lg:grid-cols-3'
+                  } gap-3 sm:gap-6 lg:gap-8 justify-items-center w-full`}
                 >
                   {filteredProducts.map((prod) => (
                     <ProductCard key={prod._id || prod.id} product={prod} />
@@ -232,7 +311,7 @@ const ShopPage = ({ products = [] }) => {
       <QuickSearchModal
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
-        allProducts={products}
+        allProducts={shopProducts}
       />
     </div>
   );

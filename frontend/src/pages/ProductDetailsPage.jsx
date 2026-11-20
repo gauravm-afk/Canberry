@@ -10,6 +10,16 @@ import QuickSearchModal from '../components/QuickSearchModal';
 import { useCart } from '../context/CartContext';
 import { fetchProductById, fetchProducts } from '../services/api';
 
+const getCleanUnitSize = (unitStr) => {
+  if (!unitStr) return '100 g';
+  const trimmed = unitStr.trim();
+  if (trimmed.includes('/')) {
+    const parts = trimmed.split('/');
+    return parts[parts.length - 1].trim();
+  }
+  return trimmed;
+};
+
 const ProductDetailsPage = ({ allProducts = [] }) => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -18,7 +28,7 @@ const ProductDetailsPage = ({ allProducts = [] }) => {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  const [selectedSize, setSelectedSize] = useState('200gm');
+  const [selectedSize, setSelectedSize] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
@@ -59,11 +69,10 @@ const ProductDetailsPage = ({ allProducts = [] }) => {
       if (isMounted) {
         if (found) {
           setProduct(found);
-          if (found.sizes && found.sizes.length > 0) {
-            setSelectedSize(found.sizes[0]);
-          } else {
-            setSelectedSize('200gm');
-          }
+          const computedSizes = (found.sizes && Array.isArray(found.sizes) && found.sizes.length > 0)
+            ? found.sizes
+            : [getCleanUnitSize(found.unit)];
+          setSelectedSize(computedSizes[0]);
         } else {
           setProduct(null);
         }
@@ -136,7 +145,10 @@ const ProductDetailsPage = ({ allProducts = [] }) => {
 
   const wishlisted = isWishlisted(product._id || product.id);
 
-  const availableSizes = product.sizes || ['100gm', '200gm'];
+  // Size options: Use product.sizes if explicitly configured with multiple sizes; otherwise use the product's unit added in form
+  const availableSizes = (product.sizes && Array.isArray(product.sizes) && product.sizes.length > 0)
+    ? product.sizes
+    : [getCleanUnitSize(product.unit)];
 
   // Related products from same category or catalog, excluding current product
   const relatedProducts = allProducts
@@ -144,10 +156,11 @@ const ProductDetailsPage = ({ allProducts = [] }) => {
     .slice(0, 5);
 
   const handleAddToCart = () => {
+    const currentSize = selectedSize || (availableSizes.length > 0 ? availableSizes[0] : '100 g');
     const productWithVariant = {
       ...product,
-      selectedSize,
-      name: `${product.name} (${selectedSize})`,
+      selectedSize: currentSize,
+      name: `${product.name} (${currentSize})`,
     };
     addToCart(productWithVariant, quantity);
   };
@@ -446,6 +459,7 @@ const ProductDetailsPage = ({ allProducts = [] }) => {
               <ProductCard
                 key={relProduct._id || relProduct.id}
                 product={relProduct}
+                className="w-[180px] sm:w-[262px]"
               />
             ))}
           </div>

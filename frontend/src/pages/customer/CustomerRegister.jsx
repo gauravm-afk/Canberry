@@ -17,8 +17,6 @@ export default function CustomerRegister() {
     email: '',
     phone: '',
     address: '',
-    city: '',
-    pincode: '',
     password: '',
     confirmPassword: '',
   });
@@ -62,9 +60,7 @@ export default function CustomerRegister() {
         fullName: form.fullName.trim(),
         email: form.email.trim().toLowerCase(),
         phone: form.phone.trim(),
-        address: form.address.trim(),
-        city: form.city.trim(),
-        pincode: form.pincode.trim(),
+        address: form.address ? form.address.trim() : '',
         password: form.password,
       });
 
@@ -93,7 +89,7 @@ export default function CustomerRegister() {
         {/* Card */}
         <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md border border-stone-100">
           <h1 className="font-serif font-bold text-2xl text-[#1C1C1C] mb-1">Create Account</h1>
-          <p className="font-sans text-sm text-stone-500 mb-6">Join Canberry to order fresh farm dairy treats</p>
+          <p className="font-sans text-sm text-stone-500 mb-6">Join Canberi to order fresh farm dairy treats</p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Full Name */}
@@ -157,37 +153,6 @@ export default function CustomerRegister() {
                 placeholder="e.g. 123 MG Road, Apartment 4B"
                 className="w-full border border-stone-300 rounded-lg px-4 py-2.5 font-sans text-sm focus:outline-none focus:border-[#684017] bg-white transition-colors"
               />
-            </div>
-
-            {/* City & Pincode */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block font-sans text-xs font-semibold text-stone-700 uppercase tracking-wider mb-1">
-                  City
-                </label>
-                <input
-                  type="text"
-                  name="city"
-                  value={form.city}
-                  onChange={handleChange}
-                  placeholder="e.g. Mumbai"
-                  className="w-full border border-stone-300 rounded-lg px-4 py-2.5 font-sans text-sm focus:outline-none focus:border-[#684017] bg-white transition-colors"
-                />
-              </div>
-              <div>
-                <label className="block font-sans text-xs font-semibold text-stone-700 uppercase tracking-wider mb-1">
-                  PIN Code
-                </label>
-                <input
-                  type="text"
-                  name="pincode"
-                  value={form.pincode}
-                  onChange={handleChange}
-                  placeholder="e.g. 400001"
-                  maxLength={6}
-                  className="w-full border border-stone-300 rounded-lg px-4 py-2.5 font-sans text-sm focus:outline-none focus:border-[#684017] bg-white transition-colors"
-                />
-              </div>
             </div>
 
             {/* Password */}
