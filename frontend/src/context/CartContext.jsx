@@ -49,29 +49,35 @@ export const CartProvider = ({ children }) => {
 
   const addToCart = (product, qty = 1) => {
     setCart((prev) => {
-      const existing = prev.find((item) => (item._id || item.id) === (product._id || product.id));
-      if (existing) {
-        return prev.map((item) =>
-          (item._id || item.id) === (product._id || product.id)
+      const sizeKey = product.selectedSize || product.unit || '';
+      const cartItemId = product.cartItemId || `${product._id || product.id}${sizeKey ? `-${sizeKey}` : ''}`;
+
+      const existingIndex = prev.findIndex(
+        (item) => (item.cartItemId || `${item._id || item.id}${item.selectedSize || item.unit ? `-${item.selectedSize || item.unit}` : ''}`) === cartItemId
+      );
+
+      if (existingIndex > -1) {
+        return prev.map((item, idx) =>
+          idx === existingIndex
             ? { ...item, quantity: item.quantity + qty }
             : item
         );
       }
-      return [...prev, { ...product, quantity: qty }];
+      return [...prev, { ...product, cartItemId, quantity: qty }];
     });
     showToast(`Added "${product.name}" to cart!`);
     setIsCartOpen(true);
   };
 
   const removeFromCart = (id) => {
-    setCart((prev) => prev.filter((item) => (item._id || item.id) !== id));
+    setCart((prev) => prev.filter((item) => (item.cartItemId || item._id || item.id) !== id));
   };
 
   const updateQuantity = (id, delta) => {
     setCart((prev) =>
       prev
         .map((item) => {
-          if ((item._id || item.id) === id) {
+          if ((item.cartItemId || item._id || item.id) === id) {
             const newQty = item.quantity + delta;
             return newQty > 0 ? { ...item, quantity: newQty } : null;
           }

@@ -69,10 +69,12 @@ const ProductDetailsPage = ({ allProducts = [] }) => {
       if (isMounted) {
         if (found) {
           setProduct(found);
-          const computedSizes = (found.sizes && Array.isArray(found.sizes) && found.sizes.length > 0)
-            ? found.sizes
-            : [getCleanUnitSize(found.unit)];
-          setSelectedSize(computedSizes[0]);
+          const firstSize = (found.variations && Array.isArray(found.variations) && found.variations.length > 0)
+            ? found.variations[0].size
+            : (found.sizes && Array.isArray(found.sizes) && found.sizes.length > 0)
+            ? found.sizes[0]
+            : getCleanUnitSize(found.unit);
+          setSelectedSize(firstSize);
         } else {
           setProduct(null);
         }
@@ -145,10 +147,41 @@ const ProductDetailsPage = ({ allProducts = [] }) => {
 
   const wishlisted = isWishlisted(product._id || product.id);
 
-  // Size options: Use product.sizes if explicitly configured with multiple sizes; otherwise use the product's unit added in form
-  const availableSizes = (product.sizes && Array.isArray(product.sizes) && product.sizes.length > 0)
-    ? product.sizes
-    : [getCleanUnitSize(product.unit)];
+  // Normalized variations array (supports multiple variations and backwards compatibility)
+  const variations = (product.variations && Array.isArray(product.variations) && product.variations.length > 0)
+    ? product.variations
+    : (product.sizes && Array.isArray(product.sizes) && product.sizes.length > 0)
+    ? product.sizes.map((s, idx) => ({
+        size: s,
+        price: idx === 0 ? product.price : product.price,
+        originalPrice: idx === 0 ? product.originalPrice : null,
+        discount: product.discount,
+      }))
+    : [
+        {
+          size: getCleanUnitSize(product.unit),
+          price: product.price,
+          originalPrice: product.originalPrice,
+          discount: product.discount,
+        },
+      ];
+
+  const availableSizes = variations.map((v) => v.size);
+
+  // Active variation based on selectedSize (defaults to first variation)
+  const activeVariation = variations.find((v) => v.size === selectedSize) || variations[0];
+  const currentSellingPrice = activeVariation ? activeVariation.price : product.price;
+  const currentOriginalPrice = activeVariation?.originalPrice ?? product.originalPrice;
+
+  // Calculate dynamic discount percentage based on selected size's prices
+  let dynamicDiscount = null;
+  if (currentOriginalPrice && currentOriginalPrice > currentSellingPrice) {
+    const pct = Math.round(((currentOriginalPrice - currentSellingPrice) / currentOriginalPrice) * 100);
+    if (pct > 0) {
+      dynamicDiscount = `${pct}%`;
+    }
+  }
+  const displayDiscount = dynamicDiscount || activeVariation?.discount || product.discount;
 
   // Related products from same category or catalog, excluding current product
   const relatedProducts = allProducts
@@ -156,9 +189,12 @@ const ProductDetailsPage = ({ allProducts = [] }) => {
     .slice(0, 5);
 
   const handleAddToCart = () => {
-    const currentSize = selectedSize || (availableSizes.length > 0 ? availableSizes[0] : '100 g');
+    const currentSize = activeVariation?.size || selectedSize || (availableSizes.length > 0 ? availableSizes[0] : '100 g');
     const productWithVariant = {
       ...product,
+      price: Number(currentSellingPrice),
+      originalPrice: currentOriginalPrice ? Number(currentOriginalPrice) : null,
+      unit: currentSize,
       selectedSize: currentSize,
       name: `${product.name} (${currentSize})`,
     };
@@ -204,9 +240,9 @@ const ProductDetailsPage = ({ allProducts = [] }) => {
               />
 
               {/* Discount Badge (Top-Left) */}
-              {product.discount && (
+              {displayDiscount && (
                 <div className="absolute top-4 left-4 bg-[#00D084] text-white text-xs font-bold px-2.5 py-1 rounded shadow-sm z-10">
-                  {product.discount}
+                  {displayDiscount}
                 </div>
               )}
 
@@ -271,11 +307,11 @@ const ProductDetailsPage = ({ allProducts = [] }) => {
             {/* Price Row */}
             <div className="flex items-baseline space-x-3">
               <span className="font-sans font-bold text-2xl sm:text-3xl text-[#1C1C1C]">
-                ₹{Number(product.price).toFixed(2)}
+                ₹{Number(currentSellingPrice).toFixed(2)}
               </span>
-              {product.originalPrice && (
+              {currentOriginalPrice && (
                 <span className="font-sans text-base text-stone-400 line-through">
-                  ₹{Number(product.originalPrice).toFixed(2)}
+                  ₹{Number(currentOriginalPrice).toFixed(2)}
                 </span>
               )}
             </div>
@@ -285,14 +321,15 @@ const ProductDetailsPage = ({ allProducts = [] }) => {
               <span className="font-sans font-semibold text-xs text-stone-800 uppercase tracking-wider block mb-2.5">
                 Choose Size
               </span>
-              <div className="flex items-center space-x-3">
+              <div className="flex flex-wrap items-center gap-3">
                 {availableSizes.map((size) => {
                   const isSelected = selectedSize === size;
                   return (
                     <button
                       key={size}
+                      type="button"
                       onClick={() => setSelectedSize(size)}
-                      className={`px-5 py-2 rounded-md font-sans text-xs font-semibold tracking-wide transition-all ${
+                      className={`px-5 py-2 rounded-md font-sans text-xs font-semibold tracking-wide transition-all cursor-pointer ${
                         isSelected
                           ? 'bg-[#1C1C1C] text-white shadow-sm'
                           : 'bg-white text-stone-700 border border-stone-300 hover:border-stone-700'

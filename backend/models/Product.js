@@ -1,5 +1,29 @@
 import mongoose from 'mongoose';
 
+const variationSchema = new mongoose.Schema(
+  {
+    size: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    price: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    originalPrice: {
+      type: Number,
+      default: null,
+    },
+    discount: {
+      type: String,
+      default: null,
+    },
+  },
+  { _id: false }
+);
+
 const productSchema = new mongoose.Schema(
   {
     name: {
@@ -35,6 +59,10 @@ const productSchema = new mongoose.Schema(
     },
     sizes: {
       type: [String],
+      default: [],
+    },
+    variations: {
+      type: [variationSchema],
       default: [],
     },
     image: {

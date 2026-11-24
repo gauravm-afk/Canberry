@@ -54,11 +54,12 @@ const CartPage = ({ allProducts = [] }) => {
     try {
       const orderPayload = {
         items: cart.map((it) => ({
+          productId: it._id && String(it._id).match(/^[0-9a-fA-F]{24}$/) ? it._id : undefined,
           productName: it.name,
           productImage: it.image || '',
           price: Number(it.price),
           quantity: it.quantity,
-          selectedSize: it.selectedSize || '',
+          selectedSize: it.selectedSize || it.unit || '',
           subtotal: Number(it.price) * it.quantity,
         })),
         totalAmount: grandTotal,
@@ -136,7 +137,8 @@ const CartPage = ({ allProducts = [] }) => {
               {/* Cart Items List */}
               <div className="divide-y divide-stone-200">
                 {cart.map((item) => {
-                  const itemId = item._id || item.id;
+                  const itemId = item.cartItemId || item._id || item.id;
+                  const prodId = item._id || item.id;
                   const itemSubtotal = item.price * item.quantity;
                   return (
                     <div
@@ -146,7 +148,7 @@ const CartPage = ({ allProducts = [] }) => {
                       {/* Product (Image + Name + Remove) */}
                       <div className="col-span-6 sm:col-span-6 flex items-center space-x-4">
                         <Link
-                          to={`/product/${itemId}`}
+                          to={`/product/${prodId}`}
                           className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden bg-stone-100 flex-shrink-0 border border-stone-200"
                         >
                           <img
@@ -157,7 +159,7 @@ const CartPage = ({ allProducts = [] }) => {
                         </Link>
                         <div className="flex flex-col">
                           <Link
-                            to={`/product/${itemId}`}
+                            to={`/product/${prodId}`}
                             className="font-serif font-semibold text-sm sm:text-base text-[#1C1C1C] hover:text-[#684017] transition-colors leading-snug line-clamp-2"
                           >
                             {item.name}

@@ -99,10 +99,54 @@ export const createProduct = async (req, res) => {
       isIceCream,
       inStock,
       sizes,
+      variations,
     } = req.body;
 
     if (!name || !name.trim()) return res.status(400).json({ success: false, message: 'Product name is required.' });
-    if (price === undefined || price < 0) return res.status(400).json({ success: false, message: 'Valid price is required.' });
+
+    let cleanedVariations = [];
+    if (Array.isArray(variations) && variations.length > 0) {
+      cleanedVariations = variations
+        .filter((v) => v && v.size && String(v.size).trim() && v.price !== undefined && !isNaN(Number(v.price)))
+        .map((v) => {
+          const p = Number(v.price);
+          const op = v.originalPrice !== undefined && v.originalPrice !== null && v.originalPrice !== '' && !isNaN(Number(v.originalPrice))
+            ? Number(v.originalPrice)
+            : null;
+          let disc = v.discount ? String(v.discount).trim() : null;
+          if (!disc && op && op > p) {
+            disc = `-${Math.round(((op - p) / op) * 100)}%`;
+          }
+          return {
+            size: String(v.size).trim(),
+            price: p,
+            originalPrice: op,
+            discount: disc,
+          };
+        });
+    }
+
+    let finalPrice = price !== undefined && price !== '' ? Number(price) : 0;
+    let finalOriginalPrice = originalPrice ? Number(originalPrice) : null;
+    let finalUnit = unit?.trim() || '100 g';
+    let finalSizes = Array.isArray(sizes) && sizes.length > 0 ? sizes : [finalUnit];
+
+    if (cleanedVariations.length > 0) {
+      finalPrice = cleanedVariations[0].price;
+      finalOriginalPrice = cleanedVariations[0].originalPrice;
+      finalUnit = cleanedVariations[0].size;
+      finalSizes = cleanedVariations.map((v) => v.size);
+    } else {
+      if (finalPrice < 0) return res.status(400).json({ success: false, message: 'Valid price is required.' });
+      cleanedVariations = [
+        {
+          size: finalUnit,
+          price: finalPrice,
+          originalPrice: finalOriginalPrice,
+          discount: discount?.trim() || null,
+        },
+      ];
+    }
 
     const resolvedCategory = category?.trim() || 'Dairy Essentials';
     const resolvedSlug = categorySlug?.trim() || resolvedCategory.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
@@ -110,10 +154,10 @@ export const createProduct = async (req, res) => {
     const product = await Product.create({
       name: name.trim(),
       description: description?.trim() || '',
-      price: Number(price),
-      originalPrice: originalPrice ? Number(originalPrice) : null,
+      price: finalPrice,
+      originalPrice: finalOriginalPrice,
       discount: discount?.trim() || null,
-      unit: unit?.trim() || '100 g',
+      unit: finalUnit,
       category: resolvedCategory,
       categorySlug: resolvedSlug,
       image: image?.trim() || 'https://images.unsplash.com/photo-1570197788417-0e82375c9371?q=80&w=800&auto=format&fit=crop',
@@ -121,7 +165,8 @@ export const createProduct = async (req, res) => {
       isTraditionalSweet: !!isTraditionalSweet,
       isIceCream: !!isIceCream,
       inStock: inStock !== undefined ? !!inStock : true,
-      sizes: Array.isArray(sizes) && sizes.length > 0 ? sizes : [unit?.trim() || '100 g'],
+      sizes: finalSizes,
+      variations: cleanedVariations,
     });
 
     res.status(201).json({ success: true, message: 'Product created successfully.', data: product });
@@ -133,7 +178,37 @@ export const createProduct = async (req, res) => {
 // PUT /api/admin/products/:id - update product (protectAdmin)
 export const updateProduct = async (req, res) => {
   try {
-    const updates = req.body;
+    const updates = { ...req.body };
+
+    if (Array.isArray(updates.variations) && updates.variations.length > 0) {
+      const cleanedVariations = updates.variations
+        .filter((v) => v && v.size && String(v.size).trim() && v.price !== undefined && !isNaN(Number(v.price)))
+        .map((v) => {
+          const p = Number(v.price);
+          const op = v.originalPrice !== undefined && v.originalPrice !== null && v.originalPrice !== '' && !isNaN(Number(v.originalPrice))
+            ? Number(v.originalPrice)
+            : null;
+          let disc = v.discount ? String(v.discount).trim() : null;
+          if (!disc && op && op > p) {
+            disc = `-${Math.round(((op - p) / op) * 100)}%`;
+          }
+          return {
+            size: String(v.size).trim(),
+            price: p,
+            originalPrice: op,
+            discount: disc,
+          };
+        });
+
+      if (cleanedVariations.length > 0) {
+        updates.variations = cleanedVariations;
+        updates.price = cleanedVariations[0].price;
+        updates.originalPrice = cleanedVariations[0].originalPrice;
+        updates.unit = cleanedVariations[0].size;
+        updates.sizes = cleanedVariations.map((v) => v.size);
+      }
+    }
+
     const product = await Product.findByIdAndUpdate(
       req.params.id,
       { $set: updates },

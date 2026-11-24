@@ -66,64 +66,67 @@ const CartDrawer = () => {
                 </button>
               </div>
             ) : (
-              cart.map((item) => (
-                <div
-                  key={item._id || item.id}
-                  className="flex items-center space-x-4 p-3 rounded-xl border border-stone-100 bg-stone-50/50 hover:bg-stone-50 transition-colors"
-                >
-                  {/* Item Image */}
-                  <div className="w-16 h-16 rounded-lg overflow-hidden bg-stone-200 flex-shrink-0">
-                    <img
-                      src={item.image}
-                      alt={item.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
+              cart.map((item) => {
+                const itemId = item.cartItemId || item._id || item.id;
+                return (
+                  <div
+                    key={itemId}
+                    className="flex items-center space-x-4 p-3 rounded-xl border border-stone-100 bg-stone-50/50 hover:bg-stone-50 transition-colors"
+                  >
+                    {/* Item Image */}
+                    <div className="w-16 h-16 rounded-lg overflow-hidden bg-stone-200 flex-shrink-0">
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
 
-                  {/* Details */}
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-serif font-semibold text-sm text-stone-800 truncate">
-                      {item.name}
-                    </h4>
-                    <p className="font-sans text-xs text-stone-500">
-                      ₹{Number(item.price).toFixed(2)} / {item.unit || 'unit'}
-                    </p>
+                    {/* Details */}
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-serif font-semibold text-sm text-stone-800 truncate">
+                        {item.name}
+                      </h4>
+                      <p className="font-sans text-xs text-stone-500">
+                        ₹{Number(item.price).toFixed(2)} / {item.selectedSize || item.unit || 'unit'}
+                      </p>
 
-                    {/* Quantity controls */}
-                    <div className="flex items-center space-x-2 mt-2">
+                      {/* Quantity controls */}
+                      <div className="flex items-center space-x-2 mt-2">
+                        <button
+                          onClick={() => updateQuantity(itemId, -1)}
+                          className="w-6 h-6 rounded bg-white border border-stone-200 flex items-center justify-center text-stone-600 hover:bg-stone-100 transition-colors cursor-pointer"
+                        >
+                          <Minus className="w-3 h-3" />
+                        </button>
+                        <span className="font-sans text-xs font-bold w-6 text-center">
+                          {item.quantity}
+                        </span>
+                        <button
+                          onClick={() => updateQuantity(itemId, 1)}
+                          className="w-6 h-6 rounded bg-white border border-stone-200 flex items-center justify-center text-stone-600 hover:bg-stone-100 transition-colors cursor-pointer"
+                        >
+                          <Plus className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Subtotal & Delete */}
+                    <div className="flex flex-col items-end justify-between space-y-2">
                       <button
-                        onClick={() => updateQuantity(item._id || item.id, -1)}
-                        className="w-6 h-6 rounded bg-white border border-stone-200 flex items-center justify-center text-stone-600 hover:bg-stone-100 transition-colors"
+                        onClick={() => removeFromCart(itemId)}
+                        className="text-stone-400 hover:text-rose-500 p-1 cursor-pointer"
+                        title="Remove"
                       >
-                        <Minus className="w-3 h-3" />
+                        <Trash2 className="w-4 h-4" />
                       </button>
-                      <span className="font-sans text-xs font-bold w-6 text-center">
-                        {item.quantity}
+                      <span className="font-sans font-bold text-sm text-stone-800">
+                        ₹{(item.price * item.quantity).toFixed(2)}
                       </span>
-                      <button
-                        onClick={() => updateQuantity(item._id || item.id, 1)}
-                        className="w-6 h-6 rounded bg-white border border-stone-200 flex items-center justify-center text-stone-600 hover:bg-stone-100 transition-colors"
-                      >
-                        <Plus className="w-3 h-3" />
-                      </button>
                     </div>
                   </div>
-
-                  {/* Subtotal & Delete */}
-                  <div className="flex flex-col items-end justify-between space-y-2">
-                    <button
-                      onClick={() => removeFromCart(item._id || item.id)}
-                      className="text-stone-400 hover:text-rose-500 p-1"
-                      title="Remove"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                    <span className="font-sans font-bold text-sm text-stone-800">
-                      ₹{(item.price * item.quantity).toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
 

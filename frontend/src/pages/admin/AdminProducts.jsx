@@ -51,6 +51,7 @@ export default function AdminProducts() {
     originalPrice: '',
     discount: '',
     unit: '100 g',
+    variations: [{ size: '100 g', price: '', originalPrice: '' }],
     image: '',
     inStock: true,
     isBestseller: false,
@@ -87,6 +88,35 @@ export default function AdminProducts() {
     setFeedback({ type: 'success', message: `Category "${newCatName}" created and selected!` });
   };
 
+  const handleAddVariation = () => {
+    setFormData((prev) => ({
+      ...prev,
+      variations: [...(prev.variations || []), { size: '', price: '', originalPrice: '' }],
+    }));
+  };
+
+  const handleRemoveVariation = (index) => {
+    if (formData.variations.length <= 1) return;
+    setFormData((prev) => ({
+      ...prev,
+      variations: prev.variations.filter((_, idx) => idx !== index),
+    }));
+  };
+
+  const handleVariationChange = (index, field, value) => {
+    setFormData((prev) => {
+      const updated = [...(prev.variations || [])];
+      updated[index] = { ...updated[index], [field]: value };
+      return {
+        ...prev,
+        variations: updated,
+        price: updated[0]?.price ?? prev.price,
+        unit: updated[0]?.size ?? prev.unit,
+        originalPrice: updated[0]?.originalPrice ?? prev.originalPrice,
+      };
+    });
+  };
+
   const loadProducts = async () => {
     try {
       setLoading(true);
@@ -110,6 +140,7 @@ export default function AdminProducts() {
       originalPrice: '',
       discount: '',
       unit: '100 g',
+      variations: [{ size: '100 g', price: '', originalPrice: '' }],
       image: '',
       inStock: true,
       isBestseller: false,
@@ -121,14 +152,30 @@ export default function AdminProducts() {
 
   const handleOpenEdit = (prod) => {
     setEditingProduct(prod);
+
+    const initialVariations = (prod.variations && Array.isArray(prod.variations) && prod.variations.length > 0)
+      ? prod.variations.map((v) => ({
+          size: v.size || '',
+          price: v.price !== undefined && v.price !== null ? String(v.price) : '',
+          originalPrice: v.originalPrice !== undefined && v.originalPrice !== null ? String(v.originalPrice) : '',
+        }))
+      : [
+          {
+            size: prod.unit || '100 g',
+            price: prod.price !== undefined && prod.price !== null ? String(prod.price) : '',
+            originalPrice: prod.originalPrice !== undefined && prod.originalPrice !== null ? String(prod.originalPrice) : '',
+          },
+        ];
+
     setFormData({
       name: prod.name || '',
       description: prod.description || '',
       category: prod.category || 'Dairy Essentials',
-      price: prod.price || '',
-      originalPrice: prod.originalPrice || '',
+      price: prod.price !== undefined && prod.price !== null ? String(prod.price) : '',
+      originalPrice: prod.originalPrice !== undefined && prod.originalPrice !== null ? String(prod.originalPrice) : '',
       discount: prod.discount || '',
       unit: prod.unit || '100 g',
+      variations: initialVariations,
       image: prod.image || '',
       inStock: prod.inStock !== undefined ? prod.inStock : true,
       isBestseller: !!prod.isBestseller,
@@ -156,12 +203,56 @@ export default function AdminProducts() {
     setSaving(true);
     setFeedback({ type: '', message: '' });
 
+    // Validate variations
+    const currentVariations = formData.variations || [];
+    if (currentVariations.length === 0) {
+      setFeedback({ type: 'error', message: 'At least one size variation is required.' });
+      setSaving(false);
+      return;
+    }
+
+    for (let i = 0; i < currentVariations.length; i++) {
+      const v = currentVariations[i];
+      if (!v.size || !v.size.trim()) {
+        setFeedback({ type: 'error', message: `Variation #${i + 1} must have a weight / unit (e.g. 250 g).` });
+        setSaving(false);
+        return;
+      }
+      if (v.price === '' || v.price === null || isNaN(Number(v.price)) || Number(v.price) < 0) {
+        setFeedback({ type: 'error', message: `Variation "${v.size}" must have a valid selling price.` });
+        setSaving(false);
+        return;
+      }
+      if (v.originalPrice !== '' && v.originalPrice !== null && (isNaN(Number(v.originalPrice)) || Number(v.originalPrice) < 0)) {
+        setFeedback({ type: 'error', message: `Variation "${v.size}" original price must be a valid number.` });
+        setSaving(false);
+        return;
+      }
+    }
+
     try {
+      const cleanedVariations = currentVariations.map((v) => {
+        const p = Number(v.price);
+        const op = v.originalPrice !== '' && v.originalPrice !== null ? Number(v.originalPrice) : null;
+        let disc = null;
+        if (op && op > p) {
+          disc = `-${Math.round(((op - p) / op) * 100)}%`;
+        }
+        return {
+          size: v.size.trim(),
+          price: p,
+          originalPrice: op,
+          discount: disc,
+        };
+      });
+
       const payload = {
         ...formData,
-        price: Number(formData.price),
-        originalPrice: formData.originalPrice ? Number(formData.originalPrice) : null,
-        sizes: formData.unit && formData.unit.trim() ? [formData.unit.trim()] : ['100 g'],
+        price: cleanedVariations[0].price,
+        originalPrice: cleanedVariations[0].originalPrice,
+        unit: cleanedVariations[0].size,
+        sizes: cleanedVariations.map((v) => v.size),
+        variations: cleanedVariations,
       };
 
       if (editingProduct) {
@@ -332,7 +423,11 @@ export default function AdminProducts() {
                       {/* Name & Unit */}
                       <td className="px-5 py-3.5">
                         <p className="font-semibold text-stone-900 line-clamp-1">{prod.name}</p>
-                        <p className="text-xs text-stone-400">{prod.unit || '100 g'}</p>
+                        <p className="text-xs text-stone-400">
+                          {prod.variations && prod.variations.length > 1
+                            ? `${prod.variations.length} sizes: ${prod.variations.map((v) => v.size).join(', ')}`
+                            : (prod.unit || '100 g')}
+                        </p>
                       </td>
 
                       {/* Category */}
@@ -460,7 +555,7 @@ export default function AdminProducts() {
                   />
                 </div>
 
-                {/* Category & Unit */}
+                {/* Category & Discount Badge */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <div className="flex items-center justify-between mb-1">
@@ -487,58 +582,102 @@ export default function AdminProducts() {
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-stone-700 uppercase tracking-wider mb-1">
-                      Weight / Unit (e.g. 500g, 1L)
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.unit}
-                      onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                      placeholder="100 g"
-                      className="w-full px-3.5 py-2.5 border border-stone-300 rounded-xl text-sm focus:outline-none focus:border-[#684017]"
-                    />
-                  </div>
-                </div>
-
-                {/* Price, Original Price, Discount */}
-                <div className="grid grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-stone-700 uppercase tracking-wider mb-1">
-                      Selling Price (₹) *
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      required
-                      value={formData.price}
-                      onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                      placeholder="199.00"
-                      className="w-full px-3.5 py-2.5 border border-stone-300 rounded-xl text-sm focus:outline-none focus:border-[#684017]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-stone-700 uppercase tracking-wider mb-1">
-                      Original Price (₹)
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={formData.originalPrice}
-                      onChange={(e) => setFormData({ ...formData, originalPrice: e.target.value })}
-                      placeholder="250.00"
-                      className="w-full px-3.5 py-2.5 border border-stone-300 rounded-xl text-sm focus:outline-none focus:border-[#684017]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-stone-700 uppercase tracking-wider mb-1">
-                      Discount Badge
+                      Discount Badge (Optional)
                     </label>
                     <input
                       type="text"
                       value={formData.discount}
                       onChange={(e) => setFormData({ ...formData, discount: e.target.value })}
-                      placeholder="-20%"
+                      placeholder="e.g. -20% or 10% OFF"
                       className="w-full px-3.5 py-2.5 border border-stone-300 rounded-xl text-sm focus:outline-none focus:border-[#684017]"
                     />
+                  </div>
+                </div>
+
+                {/* Weight / Unit Variations & Pricing */}
+                <div className="space-y-3 bg-stone-50/70 p-4 rounded-xl border border-stone-200">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <label className="block text-xs font-bold text-stone-800 uppercase tracking-wider">
+                        Weight / Unit Variations & Pricing *
+                      </label>
+                      <p className="text-[11px] text-stone-500">
+                        Add multiple sizes (e.g. 250 g, 500 g, 1 kg) with individual selling and original prices.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleAddVariation}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#684017] hover:bg-[#523211] text-white rounded-lg text-xs font-semibold transition-colors shadow-2xs cursor-pointer self-start sm:self-auto"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Add More Size</span>
+                    </button>
+                  </div>
+
+                  <div className="space-y-2.5 pt-1">
+                    {formData.variations.map((v, idx) => (
+                      <div
+                        key={idx}
+                        className="flex flex-col sm:flex-row items-start sm:items-center gap-3 bg-white p-3 rounded-xl border border-stone-200 shadow-2xs"
+                      >
+                        <div className="flex-1 w-full sm:w-auto">
+                          <label className="block text-[10px] font-semibold text-stone-500 uppercase tracking-wider mb-1">
+                            Weight / Unit *
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={v.size}
+                            onChange={(e) => handleVariationChange(idx, 'size', e.target.value)}
+                            placeholder="e.g. 250 g, 500 g, 1 kg"
+                            className="w-full px-3 py-2 border border-stone-300 rounded-lg text-xs sm:text-sm focus:outline-none focus:border-[#684017]"
+                          />
+                        </div>
+
+                        <div className="w-full sm:w-36">
+                          <label className="block text-[10px] font-semibold text-stone-500 uppercase tracking-wider mb-1">
+                            Selling Price (₹) *
+                          </label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            required
+                            value={v.price}
+                            onChange={(e) => handleVariationChange(idx, 'price', e.target.value)}
+                            placeholder="199.00"
+                            className="w-full px-3 py-2 border border-stone-300 rounded-lg text-xs sm:text-sm focus:outline-none focus:border-[#684017]"
+                          />
+                        </div>
+
+                        <div className="w-full sm:w-36">
+                          <label className="block text-[10px] font-semibold text-stone-500 uppercase tracking-wider mb-1">
+                            Original Price (₹)
+                          </label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={v.originalPrice}
+                            onChange={(e) => handleVariationChange(idx, 'originalPrice', e.target.value)}
+                            placeholder="250.00"
+                            className="w-full px-3 py-2 border border-stone-300 rounded-lg text-xs sm:text-sm focus:outline-none focus:border-[#684017]"
+                          />
+                        </div>
+
+                        {formData.variations.length > 1 && (
+                          <div className="self-end sm:self-center mt-0 sm:mt-5">
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveVariation(idx)}
+                              className="p-2 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                              title="Remove size variation"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 </div>
 
